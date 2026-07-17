@@ -1,0 +1,111 @@
+name: CI / Deploy
+
+# CI (lint + tests + image-build validation) runs on every trigger. Deploy runs
+# only on push-to-main and the manual button, SSHing into the VPS to build-on-box
+# and health-verify. See docs/CICD.md for setup and the rollback runbook.
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag, or commit SHA to deploy
+        required: false
+        default: main
+
+# Least privilege: the workflow only needs to read the repo. No app secrets are
+# ever exposed to CI — they live in .env on the VPS.
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, test, build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          # Matches the Dockerfile base image (python:3.13-slim).
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: requirements-dev.txt
+
+      - name: Install dev dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: Lint (ruff)
+        run: ruff check .
+
+      - name: Test (pytest)
+        # smoke.py is intentionally NOT run here: it hits the live Aster endpoint,
+        # which bans abusive IPs. The tests/ suite is fully offline.
+        run: pytest -q
+
+      - name: Set up Buildx
+        uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+      - name: Validate image builds
+        # Build-on-box means CI never pushes an image — it only proves the
+        # Dockerfile compiles. GitHub Actions layer cache keeps it fast.
+        uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+        with:
+          context: .
+          push: false
+          load: false
+          tags: aster-whale-monitor:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    name: Deploy to VPS
+    needs: ci
+    runs-on: ubuntu-latest
+
+    # Deploy only on the manual button or a push to main — never on pull_request.
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main')
+
+    # Scopes the SSH secrets to this environment and lets a required-reviewer gate
+    # be added later so the manual button becomes an approval gate.
+    environment: production
+
+    # Serialize deploys so two never overlap; queue rather than cancel so an
+    # in-flight deploy always finishes. Scoped to this job so PR CI runs are not
+    # blocked behind a deploy.
+    concurrency:
+      group: production-deploy
+      cancel-in-progress: false
+
+    steps:
+      - name: Deploy over SSH (build-on-box + health-verify + auto-rollback)
+        uses: appleboy/ssh-action@0ff4204d59e8e51228ff73bce53f80d53301dee2 # v1.2.5
+        env:
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          # Push -> exact pushed commit; manual dispatch -> the chosen ref.
+          DEPLOY_REF: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.ref || github.sha }}
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          port: ${{ secrets.SSH_PORT || 22 }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          # Pin the server's host key by SHA256 fingerprint (no
+          # StrictHostKeyChecking=no). Get it with:
+          #   ssh-keyscan -p <port> <host> | ssh-keygen -lf -
+          fingerprint: ${{ secrets.SSH_HOST_FINGERPRINT }}
+          # Forward these runner env vars into the remote shell.
+          envs: DEPLOY_PATH,DEPLOY_REF
+          # Allow time for the build + health-wait (deploy.sh caps health at 180s).
+          command_timeout: 20m
+          # Fail the step on any non-zero exit from the remote script.
+          script_stop: true
+          # Run the repo's committed, versioned deploy logic on the box.
+          script: |
+            cd "$DEPLOY_PATH"
+            bash scripts/deploy.sh

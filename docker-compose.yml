@@ -1,0 +1,40 @@
+services:
+  tracker:
+    build: .
+    image: aster-whale-monitor
+    container_name: aster-whale-monitor
+    restart: unless-stopped
+
+    # Reaps zombies and forwards signals, so `docker compose down` stops the bot
+    # gracefully rather than killing it mid-cycle.
+    init: true
+
+    env_file: .env
+
+    environment:
+      # Overrides any paths in .env: state must land on the volume below, not in
+      # the container's writable layer where a rebuild would erase it.
+      DB_PATH: /data/tracker.db
+      HEARTBEAT_PATH: /data/heartbeat
+      # Falls back to UTC if .env doesn't set TZ. The fills window is
+      # timestamp-sensitive, so keep this UTC unless you have a reason.
+      TZ: ${TZ:-UTC}
+
+    volumes:
+      # Named local volume. Do NOT point this at an NFS/CIFS share: SQLite's WAL
+      # mode needs working POSIX locking and misbehaves on network filesystems.
+      - aster-tracker-data:/data
+
+    # Sized for a small bot; caps a runaway from taking the host down with it.
+    mem_limit: 256m
+    pids_limit: 256
+
+    # A crash-loop can otherwise fill the host disk with logs.
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "5"
+
+volumes:
+  aster-tracker-data:

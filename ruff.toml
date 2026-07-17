@@ -1,0 +1,20 @@
+# Lint config for the AsterDEX tracker bot. Kept intentionally small: this is the
+# gate CI enforces, so it selects meaningful correctness/style rules without
+# turning stylistic noise into red builds.
+
+# The house style wraps around 88; 120 leaves headroom for the occasional long
+# line without reformatting working code, while E501 still catches egregious ones.
+target-version = "py313"
+line-length = 120
+
+# tests/ and smoke.py are real code and worth linting too; nothing is excluded
+# beyond the defaults (.venv, __pycache__, caches).
+
+[lint]
+# E/W: pycodestyle, F: pyflakes (real bugs — unused imports, undefined names),
+# I: import sorting, UP: pyupgrade, B: bugbear.
+select = ["E", "W", "F", "I", "UP", "B"]
+
+[lint.per-file-ignores]
+# Tests lean on wide fixtures and long, explanatory assertions.
+"tests/*" = ["E501"]
