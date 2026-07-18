@@ -107,5 +107,6 @@ jobs:
           # runs `set -euo pipefail`, so it aborts on any non-zero itself.)
           # Run the repo's committed, versioned deploy logic on the box.
           script: |
-            cd "$DEPLOY_PATH"
+            set -euo pipefail
+            cd "$DEPLOY_PATH" || { echo "DEPLOY_PATH does not exist on the box: $DEPLOY_PATH (bootstrap the checkout first — see docs/CICD.md)"; exit 1; }
             bash scripts/deploy.sh
