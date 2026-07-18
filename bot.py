@@ -147,7 +147,16 @@ def build_application(config: Config) -> Application:
     application.add_handler(CommandHandler("list", handlers.list_wallets))
     application.add_error_handler(on_error)
 
-    poller = Poller(config, db, rpc, make_dispatch(application, config.target_chat_id))
+    poller = Poller(
+        config,
+        db,
+        rpc,
+        make_dispatch(
+            application,
+            config.target_chat_id,
+            config.telegram_channel_thread_id or None,
+        ),
+    )
 
     application.bot_data.update(
         {"config": config, "db": db, "rpc": rpc, "poller": poller}

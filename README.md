@@ -67,7 +67,9 @@ cp .env.example .env
 ```
 
 Fill in `TELEGRAM_BOT_TOKEN`, `TARGET_CHAT_ID` and `ADMIN_USER_IDS`. Everything
-else has a sensible default; see the comments in `.env.example`.
+else has a sensible default; see the comments in `.env.example`. To post into a
+specific forum topic of a channel/group, set `TELEGRAM_CHANNEL_THREAD_ID` to that
+topic's thread id (leave it empty to post to the main chat).
 
 ## Running
 

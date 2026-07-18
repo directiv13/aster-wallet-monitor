@@ -90,6 +90,10 @@ away.
   including `.` and `-`, which appear in every price).
 - `fills_window` must stay ≤ 7 days and ≥ `FILLS_MIN_FROM_MS`; a wider range is a
   hard JSON-RPC error.
+- Notifications post to `TARGET_CHAT_ID`, optionally into a forum topic via
+  `TELEGRAM_CHANNEL_THREAD_ID`. It defaults to `0`, which `bot.make_dispatch`
+  normalises to `None` (omit `message_thread_id`) — passing `0` to Telegram fails
+  on a non-forum chat.
 
 ## Commands
 

@@ -267,6 +267,7 @@ def make_config(tmp_path, **overrides) -> Config:
     defaults = dict(
         telegram_bot_token="token",
         target_chat_id=-100,
+        telegram_channel_thread_id=0,
         admin_user_ids=frozenset({1}),
         poll_interval_seconds=15.0,
         balance_change_epsilon=Decimal("0.01"),
