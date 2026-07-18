@@ -57,7 +57,7 @@ def render_event(event: Event) -> str:
             raise ValueError(f"no renderer for {type(event).__name__}")
 
 
-def make_dispatch(application: Application, chat_id: int):
+def make_dispatch(application: Application, chat_id: int, message_thread_id: int | None = None):
     """Build the callback the poller uses to publish events.
 
     A failed send is logged and swallowed: losing one notification is bad, but
@@ -72,6 +72,7 @@ def make_dispatch(application: Application, chat_id: int):
                     text=render_event(event),
                     parse_mode="HTML",
                     disable_web_page_preview=True,
+                    message_thread_id=message_thread_id
                 )
             except TelegramError:
                 logger.exception("failed to deliver %s", type(event).__name__)

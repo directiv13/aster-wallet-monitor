@@ -33,6 +33,7 @@ class Config:
 
     telegram_bot_token: str
     target_chat_id: int
+    telegram_channel_thread_id: int
     admin_user_ids: frozenset[int]
     poll_interval_seconds: float
     balance_change_epsilon: Decimal
@@ -117,6 +118,7 @@ def load_config(env_file: str | os.PathLike[str] | None = ".env") -> Config:
     token = _require("TELEGRAM_BOT_TOKEN")
     # Group/channel ids are negative; only a plain integer is meaningful here.
     chat_id = _int("TARGET_CHAT_ID")
+    channel_thread_id = _int("TELEGRAM_CHANNEL_THREAD_ID", default=0)
     admins = _admin_ids(_require("ADMIN_USER_IDS"))
 
     db_path = Path((os.getenv("DB_PATH") or "").strip() or "tracker.db")
@@ -128,6 +130,7 @@ def load_config(env_file: str | os.PathLike[str] | None = ".env") -> Config:
     return Config(
         telegram_bot_token=token,
         target_chat_id=chat_id,
+        telegram_channel_thread_id=channel_thread_id,
         admin_user_ids=admins,
         poll_interval_seconds=_float("POLL_INTERVAL_SECONDS", 15.0, minimum=1.0),
         balance_change_epsilon=_decimal("BALANCE_CHANGE_EPSILON", "0.01"),
