@@ -1,0 +1,71 @@
+{
+  // Local debug configurations for the Aster wallet monitor.
+  // "Bot" needs a populated .env (TELEGRAM_BOT_TOKEN, TARGET_CHAT_ID, ADMIN_USER_IDS).
+  // "Smoke check" hits the real Aster endpoint read-only and needs no token.
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Bot (run_polling)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/bot.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    },
+    {
+      "name": "Smoke check (live, read-only)",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/smoke.py",
+      "args": [],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    },
+    {
+      "name": "Healthcheck",
+      "type": "debugpy",
+      "request": "launch",
+      "program": "${workspaceFolder}/healthcheck.py",
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    },
+    {
+      "name": "Pytest (all tests)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": [],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    },
+    {
+      "name": "Pytest (current file)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["${file}", "-v"],
+      "console": "integratedTerminal",
+      "cwd": "${workspaceFolder}",
+      "justMyCode": false,
+      "env": {
+        "PYTHONIOENCODING": "utf-8"
+      }
+    }
+  ]
+}
