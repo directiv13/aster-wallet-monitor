@@ -103,8 +103,8 @@ jobs:
           envs: DEPLOY_PATH,DEPLOY_REF
           # Allow time for the build + health-wait (deploy.sh caps health at 180s).
           command_timeout: 20m
-          # Fail the step on any non-zero exit from the remote script.
-          script_stop: true
+          # (No script_stop: removed in newer ssh-action/drone-ssh. deploy.sh
+          # runs `set -euo pipefail`, so it aborts on any non-zero itself.)
           # Run the repo's committed, versioned deploy logic on the box.
           script: |
             cd "$DEPLOY_PATH"
