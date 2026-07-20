@@ -96,9 +96,12 @@ def test_labels_are_html_escaped() -> None:
     assert "&lt;b&gt;pwn&lt;/b&gt;" in title
     assert "&amp; co" in title
     assert "<b>pwn</b>" not in title
+    # The escaped label sits inside a link to the wallet's full address.
+    assert f'href="https://www.asterdex.com/en/explorer/address/{WALLET.address}"' in title
+    assert '<a href="https://www.asterdex.com/en/explorer/address/' in title
 
 
-def test_wallet_title_without_label_is_just_the_address() -> None:
+def test_wallet_title_without_label_links_the_address() -> None:
     unlabelled = Wallet(
         address=WALLET.address,
         label=None,
@@ -107,7 +110,10 @@ def test_wallet_title_without_label_is_just_the_address() -> None:
         privacy_state="disabled",
         baselined=True,
     )
-    assert fmt.wallet_title(unlabelled) == "<code>0x1e1a…714e</code>"
+    assert fmt.wallet_title(unlabelled) == (
+        f'<a href="https://www.asterdex.com/en/explorer/address/{WALLET.address}">'
+        "<code>0x1e1a…714e</code></a>"
+    )
 
 
 def test_fill_message_has_direction_and_notional() -> None:

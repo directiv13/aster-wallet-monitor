@@ -27,6 +27,8 @@ TELEGRAM_LIMIT = 4096
 # Leaves room for the chunk counter suffix appended to split messages.
 _CHUNK_LIMIT = 3900
 
+EXPLORER_URL = "https://www.asterdex.com/en/explorer/address/{address}"
+
 LONG_EMOJI = "🟢"
 SHORT_EMOJI = "🔴"
 PROFIT_EMOJI = "📈"
@@ -136,10 +138,15 @@ def short_address(address: str) -> str:
 
 
 def wallet_title(wallet: Wallet) -> str:
-    """Bold label (when set) plus the shortened address, both escaped."""
-    short = f"<code>{esc(short_address(wallet.address))}</code>"
+    """Label (when set) and shortened address, both linking to Aster Explorer.
+
+    The href always targets the wallet's full address; ``esc`` still wraps every
+    interpolated value, so a hostile label stays neutralised.
+    """
+    href = esc(EXPLORER_URL.format(address=wallet.address))
+    short = f'<a href="{href}"><code>{esc(short_address(wallet.address))}</code></a>'
     if wallet.label:
-        return f"<b>{esc(wallet.label)}</b> · {short}"
+        return f'<b><a href="{href}">{esc(wallet.label)}</a></b> · {short}'
     return short
 
 
